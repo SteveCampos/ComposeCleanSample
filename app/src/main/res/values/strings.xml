@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Compose Clean Sample</string>
+    <string name="activity_list_user_cd_phone">Phone</string>
+    <string name="activity_list_user_cd_email">Mail</string>
+    <string name="activity_list_user_msg_show_post">Ver publicaciones</string>
+    <string name="activity_list_user_msg_failed_to_load_users">Ups! No se pudo cargar los usuarios</string>
+    <string name="activity_list_user_msg_network_error">Network error</string>
+</resources>
