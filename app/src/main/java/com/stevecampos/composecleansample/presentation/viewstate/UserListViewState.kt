@@ -7,9 +7,9 @@ sealed class UserListViewState {
     object FailedLoadUsersState : UserListViewState()
     object NetworkErrorState : UserListViewState()
 
-    data class SuccessAndNoFilterState(val items: List<GetUsersResponse>) : UserListViewState()
+    data class SuccessGetUsersState(val items: List<GetUsersResponse>) : UserListViewState()
 
-    data class SuccessAndFilteringState(val items: List<GetUsersResponse>, val filter: String) :
+    /*data class SuccessAndFilteringState(val items: List<GetUsersResponse>, val filter: String) :
         UserListViewState()
 
     data class SuccessAndFilterProduceResultsState(
@@ -21,7 +21,7 @@ sealed class UserListViewState {
     data class SuccessAndFilterProduceEmptyResultState(
         val items: List<GetUsersResponse>,
         val filter: String
-    ): UserListViewState()
+    ): UserListViewState()*/
 
 }
 

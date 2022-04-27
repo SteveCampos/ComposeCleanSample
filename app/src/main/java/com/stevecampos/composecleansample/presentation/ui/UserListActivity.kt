@@ -15,12 +15,15 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,6 +32,9 @@ import com.stevecampos.composecleansample.presentation.ui.theme.ComposeCleanSamp
 import com.stevecampos.composecleansample.presentation.viewstate.UserListViewState
 import com.stevecampos.composecleansample.presentation.vm.UserListViewModel
 import org.koin.androidx.compose.get
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.toLowerCase
 
 class UserListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,33 +62,41 @@ fun UserListScreen() {
                 }
             )
         }
-    ) { innerPadding ->
-        BodyContent(Modifier.padding(innerPadding))
+    ) {
+        BodyContent()
     }
 }
 
 @Composable
-fun BodyContent(modifier: Modifier = Modifier, viewModel: UserListViewModel = get()) {
+fun BodyContent(viewModel: UserListViewModel = get()) {
     val uiState = viewModel.viewState.observeAsState(UserListViewState.LoadingUsersState)
 
     val posibleStates = uiState.value
 
     when (posibleStates) {
         is UserListViewState.LoadingUsersState -> LoadingUsersWidget()
-        is UserListViewState.FailedLoadUsersState -> FailedLoadUsersWidget()
-        is UserListViewState.NetworkErrorState -> NetworkErrorWidget()
-        is UserListViewState.SuccessAndNoFilterState -> UserList(users = posibleStates.items)
-        else -> NotImplementedWidget()
+        is UserListViewState.FailedLoadUsersState -> FailedLoadUsersWidget(viewModel)
+        is UserListViewState.NetworkErrorState -> NetworkErrorWidget(viewModel)
+        is UserListViewState.SuccessGetUsersState -> SuccessGetUsers(
+            originalItems = posibleStates.items
+        )
     }
 }
 
 @Composable
-fun NotImplementedWidget() {
-    Text(text = "Not implemented yet!")
+fun EmptyResultsWidget() {
+    Column {
+        Box(Modifier.fillMaxSize()) {
+            Text(
+                stringResource(R.string.activity_list_user_msg_empty_filter_results),
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
 }
 
 @Composable
-fun NetworkErrorWidget() {
+fun NetworkErrorWidget(viewModel: UserListViewModel) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -94,11 +108,14 @@ fun NetworkErrorWidget() {
             modifier = Modifier.fillMaxSize(.4f)
         )
         Text(text = stringResource(id = R.string.activity_list_user_msg_network_error))
+        TextButton(onClick = { viewModel.loadUsers() }) {
+            Text(stringResource(id = R.string.activity_msg_reload))
+        }
     }
 }
 
 @Composable
-fun FailedLoadUsersWidget() {
+fun FailedLoadUsersWidget(viewModel: UserListViewModel) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -110,20 +127,57 @@ fun FailedLoadUsersWidget() {
             modifier = Modifier.fillMaxSize(.4f)
         )
         Text(text = stringResource(id = R.string.activity_list_user_msg_failed_to_load_users))
+        TextButton(onClick = { viewModel.loadUsers() }) {
+            Text(stringResource(id = R.string.activity_msg_reload))
+        }
     }
 }
 
 @Composable
 fun LoadingUsersWidget() {
     Box(modifier = Modifier.fillMaxSize()) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(Modifier.align(Alignment.Center))
     }
 }
 
 @Composable
-fun UserList(users: List<GetUsersResponse>) {
+fun SuccessGetUsers(originalItems: List<GetUsersResponse>) {
+
+    var filterTxt by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    val filtering = filterTxt.isNotBlank()
+
+    var filteredResults = listOf<GetUsersResponse>()
+    if (filtering) {
+        filteredResults = originalItems.filter {
+            it.name.toLowerCase(Locale.current).contains(filterTxt.toLowerCase(Locale.current))
+        }
+    }
+
+    val filteredResultsIsEmpty = filteredResults.isEmpty()
+
+    Column {
+        TextField(
+            value = filterTxt,
+            modifier = Modifier.fillMaxWidth(),
+            onValueChange = {
+                filterTxt = it
+            },
+            label = { Text(stringResource(R.string.activity_list_user_hint_search_user)) }
+        )
+        if (!filtering)
+            UserList(originalItems)
+        else
+            if (filteredResultsIsEmpty) EmptyResultsWidget() else UserList(filteredResults)
+    }
+}
+
+@Composable
+fun UserList(items: List<GetUsersResponse>) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
-        items(users) { user ->
+        items(items) { user ->
             UserItem(user = user)
         }
     }

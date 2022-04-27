@@ -5,4 +5,7 @@
     <string name="activity_list_user_msg_show_post">Ver publicaciones</string>
     <string name="activity_list_user_msg_failed_to_load_users">Ups! No se pudo cargar los usuarios</string>
     <string name="activity_list_user_msg_network_error">Network error</string>
+    <string name="activity_list_user_hint_search_user">Buscar usuario</string>
+    <string name="activity_list_user_msg_empty_filter_results">List is empty</string>
+    <string name="activity_msg_reload">Cargar nuevamente</string>
 </resources>
