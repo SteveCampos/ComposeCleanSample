@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-parcelize'
 }
 
 android {
@@ -47,12 +48,23 @@ android {
 
 dependencies {
 
+
+    //Mock Server
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.9.0'
+
+    //Truth
+    testImplementation "com.google.truth:truth:1.1"
+
+    //okhttp
+    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.2'
+
     implementation "io.insert-koin:koin-android:$koin_version"
     implementation "io.insert-koin:koin-androidx-compose:$koin_version"
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
     implementation "androidx.compose.ui:ui:$compose_version"
+    implementation "androidx.navigation:navigation-compose:$nav_version"
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"

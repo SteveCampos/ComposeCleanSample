@@ -1,5 +1,6 @@
 package com.stevecampos.composecleansample.presentation.ui
 
+import android.net.Uri
 import android.os.Bundle
 import com.stevecampos.composecleansample.R
 import androidx.activity.ComponentActivity
@@ -35,20 +36,52 @@ import org.koin.androidx.compose.get
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.toLowerCase
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.google.gson.Gson
+import com.stevecampos.composecleansample.presentation.ui.nav.UserNavType
+import com.stevecampos.composecleansample.presentation.vm.GetPostsViewModel
+import org.koin.androidx.compose.viewModel
 
 class UserListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeCleanSampleTheme {
-                UserListScreen()
+                MyComposableApp()
             }
         }
     }
 }
 
 @Composable
-fun UserListScreen() {
+fun MyComposableApp() {
+    val navController = rememberNavController()
+    NavHost(
+        navController = navController,
+        startDestination = ComposeAppScreens.UserListScreen.route
+    ) {
+        composable(route = ComposeAppScreens.UserListScreen.route) {
+            UserListScreen(navController = navController)
+        }
+        composable(
+            route = ComposeAppScreens.GetPostsScreen.route + "{user}",
+            arguments = listOf(navArgument("user") { type = UserNavType() })
+        ) {
+            val user = it.arguments?.getParcelable<GetUsersResponse>("user") ?: return@composable
+            val postsViewModel: GetPostsViewModel by viewModel()
+            postsViewModel.loadPosts(user.id)
+            GetPostsScreen(navController = navController, user = user, postsViewModel)
+        }
+
+    }
+}
+
+@Composable
+fun UserListScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -63,12 +96,12 @@ fun UserListScreen() {
             )
         }
     ) {
-        BodyContent()
+        BodyContent(navController)
     }
 }
 
 @Composable
-fun BodyContent(viewModel: UserListViewModel = get()) {
+fun BodyContent(navController: NavController, viewModel: UserListViewModel = get()) {
     val uiState = viewModel.viewState.observeAsState(UserListViewState.LoadingUsersState)
 
     val posibleStates = uiState.value
@@ -76,8 +109,9 @@ fun BodyContent(viewModel: UserListViewModel = get()) {
     when (posibleStates) {
         is UserListViewState.LoadingUsersState -> LoadingUsersWidget()
         is UserListViewState.FailedLoadUsersState -> FailedLoadUsersWidget(viewModel)
-        is UserListViewState.NetworkErrorState -> NetworkErrorWidget(viewModel)
+        is UserListViewState.NetworkErrorState -> NetworkErrorUserListWidget(viewModel)
         is UserListViewState.SuccessGetUsersState -> SuccessGetUsers(
+            navController = navController,
             originalItems = posibleStates.items
         )
     }
@@ -96,7 +130,14 @@ fun EmptyResultsWidget() {
 }
 
 @Composable
-fun NetworkErrorWidget(viewModel: UserListViewModel) {
+fun NetworkErrorUserListWidget(viewModel: UserListViewModel) {
+    NetworkErrorWidget(
+        errorTxt = stringResource(R.string.activity_list_user_msg_network_error),
+        onRefreshBttnClicked = { viewModel.loadUsers() })
+}
+
+@Composable
+fun NetworkErrorWidget(errorTxt: String, onRefreshBttnClicked: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -104,11 +145,11 @@ fun NetworkErrorWidget(viewModel: UserListViewModel) {
     ) {
         Image(
             painterResource(R.drawable.ic_embarrassed),
-            contentDescription = stringResource(id = R.string.activity_list_user_msg_network_error),
+            contentDescription = errorTxt,
             modifier = Modifier.fillMaxSize(.4f)
         )
-        Text(text = stringResource(id = R.string.activity_list_user_msg_network_error))
-        TextButton(onClick = { viewModel.loadUsers() }) {
+        Text(text = errorTxt)
+        TextButton(onClick = { onRefreshBttnClicked.invoke() }) {
             Text(stringResource(id = R.string.activity_msg_reload))
         }
     }
@@ -116,6 +157,13 @@ fun NetworkErrorWidget(viewModel: UserListViewModel) {
 
 @Composable
 fun FailedLoadUsersWidget(viewModel: UserListViewModel) {
+    FailedToLoadWidget(
+        errorTxt = stringResource(R.string.activity_list_user_msg_failed_to_load_users),
+        onRefreshBttnClicked = { viewModel.loadUsers() })
+}
+
+@Composable
+fun FailedToLoadWidget(errorTxt: String, onRefreshBttnClicked: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -123,25 +171,31 @@ fun FailedLoadUsersWidget(viewModel: UserListViewModel) {
     ) {
         Image(
             painterResource(R.drawable.ic_embarrassed),
-            contentDescription = stringResource(id = R.string.activity_list_user_msg_failed_to_load_users),
+            contentDescription = errorTxt,
             modifier = Modifier.fillMaxSize(.4f)
         )
-        Text(text = stringResource(id = R.string.activity_list_user_msg_failed_to_load_users))
-        TextButton(onClick = { viewModel.loadUsers() }) {
+        Text(text = errorTxt)
+        TextButton(onClick = onRefreshBttnClicked) {
             Text(stringResource(id = R.string.activity_msg_reload))
         }
     }
 }
 
+
 @Composable
 fun LoadingUsersWidget() {
+    LoadingWidget()
+}
+
+@Composable
+fun LoadingWidget() {
     Box(modifier = Modifier.fillMaxSize()) {
         CircularProgressIndicator(Modifier.align(Alignment.Center))
     }
 }
 
 @Composable
-fun SuccessGetUsers(originalItems: List<GetUsersResponse>) {
+fun SuccessGetUsers(navController: NavController, originalItems: List<GetUsersResponse>) {
 
     var filterTxt by rememberSaveable {
         mutableStateOf("")
@@ -168,28 +222,41 @@ fun SuccessGetUsers(originalItems: List<GetUsersResponse>) {
             label = { Text(stringResource(R.string.activity_list_user_hint_search_user)) }
         )
         if (!filtering)
-            UserList(originalItems)
+            UserList(navController, originalItems)
         else
-            if (filteredResultsIsEmpty) EmptyResultsWidget() else UserList(filteredResults)
+            if (filteredResultsIsEmpty) EmptyResultsWidget() else UserList(
+                navController,
+                filteredResults
+            )
     }
 }
 
 @Composable
-fun UserList(items: List<GetUsersResponse>) {
+fun UserList(
+    navController: NavController,
+    items: List<GetUsersResponse>,
+    //onUserItemClicked: (GetUsersResponse) -> Unit = {}
+) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         items(items) { user ->
-            UserItem(user = user)
+            UserItem(
+                user = user,
+                onClick = {
+                    val userJson = Uri.encode(Gson().toJson(user))
+                    navController.navigate("${ComposeAppScreens.GetPostsScreen.route}$userJson")
+                },
+            )
         }
     }
 }
 
 @Composable
-fun UserItem(user: GetUsersResponse) {
+fun UserItem(user: GetUsersResponse, showBttn: Boolean = true, onClick: () -> Unit = {}) {
     Card(
         backgroundColor = Color.White,
         modifier = Modifier
             .padding(top = 16.dp, bottom = 16.dp)
-            .fillMaxSize(),
+            .fillMaxWidth(),
         elevation = 4.dp
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -214,7 +281,10 @@ fun UserItem(user: GetUsersResponse) {
                 )
                 Text(text = user.email, modifier = Modifier.padding(start = 8.dp))
             }
-            TextButton(modifier = Modifier.align(Alignment.End), onClick = { }) {
+            if (showBttn) TextButton(
+                modifier = Modifier.align(Alignment.End),
+                onClick = onClick
+            ) {
                 Text(
                     text = stringResource(id = R.string.activity_list_user_msg_show_post).toUpperCase(
                         Locale.current
@@ -230,6 +300,6 @@ fun UserItem(user: GetUsersResponse) {
 @Composable
 fun DefaultPreview() {
     ComposeCleanSampleTheme {
-        UserListScreen()
+        MyComposableApp()
     }
 }

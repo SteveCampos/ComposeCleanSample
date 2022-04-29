@@ -8,4 +8,8 @@
     <string name="activity_list_user_hint_search_user">Buscar usuario</string>
     <string name="activity_list_user_msg_empty_filter_results">List is empty</string>
     <string name="activity_msg_reload">Cargar nuevamente</string>
+    <string name="activity_get_posts_msg_posts_from">Posts de %s</string>
+    <string name="activity_get_posts_msg_failed_to_get_posts">Ups! No se pudo cargar los posts</string>
+    <string name="activity_get_posts_msg_network_error">Network error</string>
+    <string name="activity_get_posts_msg_posts">Publicaciones</string>
 </resources>

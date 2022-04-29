@@ -1,4 +1,4 @@
-package com.stevecampos.composecleansample.data.remote.api
+package com.stevecampos.composecleansample.data.remote.api.base
 
 
 import okhttp3.OkHttpClient

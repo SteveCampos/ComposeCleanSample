@@ -1,4 +1,4 @@
-package com.stevecampos.composecleansample.data.remote
+package com.stevecampos.composecleansample.data.remote.api.base
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
