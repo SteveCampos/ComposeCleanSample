@@ -1,6 +1,7 @@
 package com.stevecampos.composecleansample.data.entities
 
 import android.os.Parcelable
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -25,6 +26,10 @@ data class GetUsersResponse(
 @Entity
 @Parcelize
 data class Company(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "company_id")
+    val id: Int,
+    @ColumnInfo(name = "company_name")
     val name: String,
     val catchPhrase: String,
     val bs: String

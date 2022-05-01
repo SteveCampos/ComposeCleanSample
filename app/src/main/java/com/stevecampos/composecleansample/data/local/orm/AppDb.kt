@@ -7,7 +7,7 @@ import com.stevecampos.composecleansample.data.entities.GetUsersResponse
 
 @Database(
     entities = [GetUsersResponse::class, GetPostsResponse::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDb : RoomDatabase() {

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.stevecampos.composecleansample.data.entities.GetPostsResponse
 import com.stevecampos.composecleansample.data.entities.GetUsersResponse
 import kotlinx.coroutines.flow.Flow
 
@@ -14,4 +15,11 @@ interface UserDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addUsers(users: List<GetUsersResponse>)
+
+
+    @Query("select * from GetPostsResponse where userId = :userId")
+    fun getPosts(userId: Int): Flow<List<GetPostsResponse>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addPosts(posts: List<GetPostsResponse>)
 }

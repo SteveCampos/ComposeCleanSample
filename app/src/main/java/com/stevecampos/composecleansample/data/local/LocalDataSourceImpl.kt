@@ -1,5 +1,7 @@
 package com.stevecampos.composecleansample.data.local
 
+import com.stevecampos.composecleansample.data.entities.GetPostsRequest
+import com.stevecampos.composecleansample.data.entities.GetPostsResponse
 import com.stevecampos.composecleansample.data.entities.GetUsersRequest
 import com.stevecampos.composecleansample.data.entities.GetUsersResponse
 import com.stevecampos.composecleansample.data.local.orm.UserDao
@@ -12,6 +14,14 @@ class LocalDataSourceImpl(private val userDao: UserDao) : LocalDataSource {
 
     override suspend fun addUsers(users: List<GetUsersResponse>) {
         return userDao.addUsers(users)
+    }
+
+    override fun getPosts(request: GetPostsRequest): Flow<List<GetPostsResponse>> {
+        return userDao.getPosts(request.userId)
+    }
+
+    override suspend fun addPosts(posts: List<GetPostsResponse>) {
+        return userDao.addPosts(posts)
     }
 
 }

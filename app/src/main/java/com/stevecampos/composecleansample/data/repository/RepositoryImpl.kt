@@ -31,7 +31,22 @@ class RepositoryImpl(
     }
 
 
-    override fun getPosts(request: GetPostsRequest): Flow<Result<List<GetPostsResponse>>> {
-        return remote.getPosts(request)
+    override fun getPosts(request: GetPostsRequest): Flow<Result<List<GetPostsResponse>>>
+            /*{
+                return remote.getPosts(request)
+            }*/ = flow {
+
+        local.getPosts(request).collect { localPosts ->
+            if (localPosts.isNotEmpty()) {
+                emit(Result.success(localPosts))
+            } else {
+                remote.getPosts(request).collect {
+                    if (it.isSuccess && it.getOrNull() != null) {
+                        local.addPosts(it.getOrNull()!!)
+                    }
+                    emit(it)
+                }
+            }
+        }
     }
 }
